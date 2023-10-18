@@ -20,7 +20,10 @@ class CepBack4AppRepository {
   }
 
   Future<ViaCepModel> consultarCEP(String cep) async {
-    var isCepRegisted = await _cep.dio.get("/ViaCep?where={\"cep\":\"$cep\"}");
+    String stringWithHyphen = "${cep.substring(0, 5)}-${cep.substring(5)}";
+
+    var isCepRegisted =
+        await _cep.dio.get("/ViaCep?where={\"cep\":\"$stringWithHyphen\"}");
 
     if (isCepRegisted.data["results"].length > 0) {
       var cepModel = ViaCepModel.fromJson(isCepRegisted.data["results"][0]);
@@ -32,34 +35,29 @@ class CepBack4AppRepository {
 
     if (response.statusCode == 200) {
       var json = jsonDecode(response.body);
+      await salvar(ViaCepModel.fromJson(json));
       return ViaCepModel.fromJson(json);
     }
     return ViaCepModel();
   }
 
-  // Future<void> salvar(ViaCepModel cepModel) async {
-  //   try {
-  //     await _cep.dio
-  //         .post("/Tarefas", data: cepModel.toJsonCreateTask());
-  //   } catch (e) {
-  //     throw Exception(e);
-  //   }
-  // }
+  Future<void> salvar(ViaCepModel cepModel) async {
+    try {
+      await _cep.dio.post("/ViaCep", data: cepModel.toJson());
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
 
-  // Future<void> atualizar(TarefaBack4AppModel tarefaBack4AppModel) async {
-  //   try {
-  //     await _cep.dio.put("/Tarefas/${tarefaBack4AppModel.objectId}",
-  //         data: tarefaBack4AppModel.toJsonCreateTask());
-  //   } catch (e) {
-  //     throw Exception(e);
-  //   }
-  // }
-
-  // Future<void> excluir(TarefaBack4AppModel tarefaBack4AppModel) async {
-  //   try {
-  //     await _cep.dio.delete("/Tarefas/${tarefaBack4AppModel.objectId}");
-  //   } catch (e) {
-  //     throw Exception(e);
-  //   }
-  // }
+  // Listar todos os CEPs
+  Future<List<ViaCepModel>> listarAll() async {
+    try {
+      var response = await _cep.dio.get("/ViaCep");
+      var lista = response.data["results"] as List;
+      var listaCep = lista.map((item) => ViaCepModel.fromJson(item)).toList();
+      return listaCep;
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
 }
