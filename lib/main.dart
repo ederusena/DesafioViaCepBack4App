@@ -18,23 +18,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Via Cep Back4App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -53,9 +38,26 @@ class ViapCep extends StatefulWidget {
 class _ViapCepState extends State<ViapCep> {
   var viaCepModel = ViaCepModel();
   var viaCepRepository = CepBack4AppRepository();
+  var _listaCeps = <ViaCepModel>[];
 
   var cepController = TextEditingController(text: "");
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    carregarDados();
+  }
+
+  void carregarDados() async {
+    setState(() {
+      isLoading = true;
+    });
+    _listaCeps = await viaCepRepository.listarAll();
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +81,8 @@ class _ViapCepState extends State<ViapCep> {
                   });
                   viaCepModel = await viaCepRepository.consultarCEP(cep);
                   // Bug com o teclado aberto
+                  carregarDados();
+
                   FocusManager.instance.primaryFocus?.unfocus();
                 }
 
@@ -103,12 +107,27 @@ class _ViapCepState extends State<ViapCep> {
                       style: const TextStyle(fontSize: 22)),
                 ],
               ),
-            )
+            ),
+            Expanded(
+              child: isLoading
+                  ? const Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 250, horizontal: 2),
+                      child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: _listaCeps.length,
+                      itemBuilder: (BuildContext bc, int index) {
+                        var cep = _listaCeps[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(cep.logradouro ?? ""),
+                            subtitle: Text(
+                                "${cep.localidade ?? ''} - ${cep.uf ?? ''} - ${cep.cep ?? ''}"),
+                          ),
+                        );
+                      }),
+            ),
           ])),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {},
-        child: const Icon(Icons.add),
-      ),
     ));
   }
 }
